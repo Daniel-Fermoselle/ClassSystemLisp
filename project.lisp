@@ -1,4 +1,4 @@
-(defparameter classes (make-hash-table))
+(defparameter class-system (make-hash-table))
 
 (defun create-constructor (slots constructor classes-names)
   `(defun ,constructor (&key ,@slots)
@@ -17,8 +17,10 @@
      (aref (gethash 'slots instance) ,(cdr getter-index))))
 
 (defmacro def-class (classes-names &rest slots)
-  (let
-      ((constructor
+  (let*
+      ((list? (listp classes-names))
+       (this (if list? (car classes-names) (classes-names)))
+       (constructor
          (intern (concatenate 'STRING
                               "MAKE" "-" (symbol-name (car classes-names)))))
        (getters
@@ -28,7 +30,10 @@
           (- (length slots) 1)))
        (recognizer
          (intern (concatenate 'STRING
-                              (symbol-name (car classes-names)) "?"))))
+                              (symbol-name (car classes-names)) "?")))
+       (class-metadata (vector (make-hash-table))))
     `(progn
+       ,(setf (gethash (car classes-names) class-system) )
        ,(create-constructor slots constructor classes-names)
-       (progn ,@(mapcar 'create-getter getters)))))
+       ,@(mapcar 'create-getter getters)
+       ))
