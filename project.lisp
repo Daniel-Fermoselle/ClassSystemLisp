@@ -1,38 +1,51 @@
 (defparameter class-system (make-hash-table))
 
-(defun create-constructor (slots constructor classes-names)
-  `(defun ,constructor (&key ,@slots)
-     (let ((instance (make-hash-table)))
-       (progn
-         (setf (gethash 'slots instance) (vector ,@slots))
-         (setf (gethash 'instance-of instance) (car ',classes-names))
-         (return-from ,constructor instance)))))
+(defun add-to-class-system (class-name slots superclasses)
+  `(let ((class (make-hash-table)))
+     (progn
+       (setf (gethash 'is-a class) ',superclasses)
+       (setf (gethash 'slot-names class) ',slots)
+       (setf (gethash ',class-name class-system) class))))
 
+(defun create-constructor (class-name slots)
+  (let ((constructor
+          (intern (concatenate
+                   'STRING  "MAKE" "-" (symbol-name class-name)))))
+    `(defun ,constructor (&key ,@slots)
+       (let ((instance (make-hash-table)))
+         (progn
+           (setf (gethash 'slots instance) (vector ,@slots))
+           (setf (gethash 'instance-of instance) ',class-name)
+           (return-from ,constructor instance))))))
+
+;Not used
 (defun index-list (list length)
   (let ((indexes (loop for x from 0 to length collect (car (list x)))))
     (mapcar #'cons list indexes)))
 
+;Not used
 (defun create-getter (getter-index)
   `(defun ,(car getter-index) (instance)
      (aref (gethash 'slots instance) ,(cdr getter-index))))
 
 (defmacro def-class (classes-names &rest slots)
   (let*
-      ((this (if (listp classes-names)
-                 (car classes-names)
-                 (car (list classes-names))))
-       (constructor
-         (intern (concatenate 'STRING
-                              "MAKE" "-" (symbol-name (car classes-names)))))
-       (getters
-         (index-list
-          (mapcar #'(lambda (x)
-                      (intern (concatenate 'STRING (symbol-name (car classes-names)) "-" (symbol-name x))))
-                  slots)
-          (- (length slots) 1)))
-       (recognizer
-         (intern (concatenate 'STRING
-                              (symbol-name (car classes-names)) "?"))))
+      ((subclass? (listp classes-names))
+       (class-name
+         (if subclass?
+             (car classes-names)
+             (car (list classes-names))))
+       (superclasses
+         (if subclass?
+             (rest classes-names)
+             nil)))
     `(progn
-       ,(create-constructor slots constructor classes-names)
-       ,@(mapcar 'create-getter getters))))
+                                        ;       ,@(mapcar 'create-getter getters)
+       ,(add-to-class-system class-name slots superclasses)
+       ,(format t "This class slots        -> ~a~%" slots)
+       ,(format t "Is subclass?            -> ~a~%" subclass?)
+       ,(format t "This class name         -> ~a~%" class-name)
+       ,(format t "This class superclasses -> ~a~%" superclasses)
+       ,(create-constructor class-name slots)
+       )
+    ))
