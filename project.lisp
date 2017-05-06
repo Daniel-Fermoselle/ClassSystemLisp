@@ -18,22 +18,21 @@
 
 (defmacro def-class (classes-names &rest slots)
   (let*
-      ((list? (listp classes-names))
-       (this (if list? (car classes-names) (classes-names)))
+      ((this (if (listp classes-names)
+                 (car classes-names)
+                 (car (list classes-names))))
        (constructor
          (intern (concatenate 'STRING
                               "MAKE" "-" (symbol-name (car classes-names)))))
        (getters
          (index-list
-          (mapcar #'(lambda (x) (intern (concatenate 'STRING
-                                                     (symbol-name (car classes-names)) "-" (symbol-name x)))) slots)
+          (mapcar #'(lambda (x)
+                      (intern (concatenate 'STRING (symbol-name (car classes-names)) "-" (symbol-name x))))
+                  slots)
           (- (length slots) 1)))
        (recognizer
          (intern (concatenate 'STRING
-                              (symbol-name (car classes-names)) "?")))
-       (class-metadata (vector (make-hash-table))))
+                              (symbol-name (car classes-names)) "?"))))
     `(progn
-       ,(setf (gethash (car classes-names) class-system) )
        ,(create-constructor slots constructor classes-names)
-       ,@(mapcar 'create-getter getters)
-       ))
+       ,@(mapcar 'create-getter getters))))
