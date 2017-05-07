@@ -1,10 +1,12 @@
 (defparameter class-system (make-hash-table))
 
+
 (defun create-hashtable (alist)
   (let ((ht (make-hash-table)))
     (loop for (key . value) in alist
           do (setf (gethash key ht) (car value)))
     ht))
+
 
 (defun add-to-class-system (class-name slots superclasses)
   `(let ((class (make-hash-table)))
@@ -13,13 +15,14 @@
        (setf (gethash 'slot-names class) ',slots)
        (setf (gethash ',class-name class-system) class))))
 
+
 (defun create-constructor (class-name slots)
   (let ((constructor
-          (intern (concatenate
-                   'STRING  "MAKE" "-" (symbol-name class-name)))))
+          (intern (concatenate 'STRING  "MAKE" "-" (symbol-name class-name)))))
     `(defun ,constructor (&key ,@slots)
        (let* ((instance (make-hash-table))
-              (init-list (mapcar #'(lambda (x) (list x ,x)) ',slots))
+              (slot-values (list ,@slots))
+              (init-list  (mapcar #'(lambda (x y) `(,x ,y)) ',slots slot-values))
               (slots-hash (create-hashtable init-list)))
          (progn
            (setf (gethash 'slots instance) slots-hash)
