@@ -45,6 +45,12 @@
         nil
         t))))
 
+(defun get-superclasses-slots (classes slots)
+  (let* ((split-slots
+           (mapcar #'(lambda (x) (gethash 'slot-names (gethash x class-system))) classes))
+         (appended-slots (apply #'append split-slots)))
+    (remove-duplicates (append slots appended-slots) :from-end t )))
+
 (defmacro def-class (classes-names &rest slots)
   (let*
       ((subclass? (listp classes-names))
@@ -55,15 +61,20 @@
        (superclasses
          (if subclass?
              classes-names
-             (list class-name))))
+             (list class-name)))
+       (superclasses-slots
+         (if subclass?
+             (get-superclasses-slots (rest classes-names) slots)
+             slots)))
     `(progn
-       ,(add-to-class-system class-name slots superclasses)
+       ,(add-to-class-system class-name superclasses-slots superclasses)
        ,(format t "This class slots        -> ~a~%" slots)
+       ,(format t "This superclass slots   -> ~a~%" superclasses-slots)
        ,(format t "Is subclass?            -> ~a~%" subclass?)
        ,(format t "This class name         -> ~a~%" class-name)
        ,(format t "This class superclasses -> ~a~%" superclasses)
-       ,(create-constructor class-name slots)
+       ,(create-constructor class-name superclasses-slots)
        ,@(mapcar 'create-getter
-                 (make-list (length slots) :initial-element class-name)
-                 slots)
+                 (make-list (length superclasses-slots) :initial-element class-name)
+                 superclasses-slots)
        ,(create-recognizer class-name))))
