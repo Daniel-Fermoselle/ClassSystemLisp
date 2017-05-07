@@ -33,8 +33,17 @@
 (defun create-getter (class-name slot)
   (let ((getter
           (intern (concatenate 'STRING  (symbol-name class-name) "-" (symbol-name slot)))))
-  `(defun ,getter (instance)
-     (gethash ',slot (gethash 'slots instance)))))
+    `(defun ,getter (instance)
+       (gethash ',slot (gethash 'slots instance)))))
+
+(defun create-recognizer (class-name)
+  (let ((recognizer
+          (intern (concatenate 'STRING (symbol-name class-name) "?"))))
+    `(defun ,recognizer (instance)
+       (if
+        (eql (find ',class-name (gethash 'is-a (gethash 'instance-of instance))) nil)
+        nil
+        t))))
 
 (defmacro def-class (classes-names &rest slots)
   (let*
@@ -46,7 +55,7 @@
        (superclasses
          (if subclass?
              classes-names
-             class-name)))
+             (list class-name))))
     `(progn
        ,(add-to-class-system class-name slots superclasses)
        ,(format t "This class slots        -> ~a~%" slots)
@@ -56,4 +65,5 @@
        ,(create-constructor class-name slots)
        ,@(mapcar 'create-getter
                  (make-list (length slots) :initial-element class-name)
-                 slots))))
+                 slots)
+       ,(create-recognizer class-name))))
