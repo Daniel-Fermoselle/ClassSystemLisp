@@ -29,15 +29,12 @@
            (setf (gethash 'instance-of instance) (gethash ',class-name class-system))
            (return-from ,constructor instance))))))
 
-;Not used
-(defun index-list (list length)
-  (let ((indexes (loop for x from 0 to length collect (car (list x)))))
-    (mapcar #'cons list indexes)))
 
-;Not used
-(defun create-getter (getter-index)
-  `(defun ,(car getter-index) (instance)
-     (aref (gethash 'slots instance) ,(cdr getter-index))))
+(defun create-getter (class-name slot)
+  (let ((getter
+          (intern (concatenate 'STRING  (symbol-name class-name) "-" (symbol-name slot)))))
+  `(defun ,getter (instance)
+     (gethash ',slot (gethash 'slots instance)))))
 
 (defmacro def-class (classes-names &rest slots)
   (let*
@@ -51,14 +48,12 @@
              classes-names
              class-name)))
     `(progn
-                                        ;       ,@(mapcar 'create-getter getters)
        ,(add-to-class-system class-name slots superclasses)
        ,(format t "This class slots        -> ~a~%" slots)
        ,(format t "Is subclass?            -> ~a~%" subclass?)
        ,(format t "This class name         -> ~a~%" class-name)
        ,(format t "This class superclasses -> ~a~%" superclasses)
        ,(create-constructor class-name slots)
-       )
-    ))
-
-
+       ,@(mapcar 'create-getter
+                 (make-list (length slots) :initial-element class-name)
+                 slots))))
