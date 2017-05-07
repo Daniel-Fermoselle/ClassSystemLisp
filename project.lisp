@@ -34,7 +34,10 @@
   (let ((getter
           (intern (concatenate 'STRING  (symbol-name class-name) "-" (symbol-name slot)))))
     `(defun ,getter (instance)
-       (gethash ',slot (gethash 'slots instance)))))
+       (multiple-value-bind (ret exist?) (gethash ',slot (gethash 'slots instance))
+         (if exist?
+             (return-from ,getter ret)
+             nil)))))
 
 (defun create-recognizer (class-name)
   (let ((recognizer
