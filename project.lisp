@@ -70,23 +70,22 @@
          (if subclass?
              (car classes-names)
              classes-names))
-       (superclasses
+       (precedence-list
          (if subclass?
              (get-superclasses-names classes-names)
              (list class-name)))
-       (superclasses-slots
+       (class-slots
          (if subclass?
              (get-superclasses-slots (rest classes-names) slots)
              slots)))
     `(progn
-       ,(add-to-class-system class-name superclasses-slots superclasses)
-       ,(format t "This class slots        -> ~a~%" slots)
-       ,(format t "This superclass slots   -> ~a~%" superclasses-slots)
-       ,(format t "Is subclass?            -> ~a~%" subclass?)
-       ,(format t "This class name         -> ~a~%" class-name)
-       ,(format t "This class superclasses -> ~a~%" superclasses)
-       ,(create-constructor class-name superclasses-slots)
+       ,(format t "Is subclass?               -> ~a~%" subclass?)
+       ,(format t "This class name            -> ~a~%" class-name)
+       ,(format t "This class precedence-list -> ~a~%" precedence-list)
+       ,(format t "This class slots           -> ~a~%" class-slots)
+       ,(add-to-class-system class-name class-slots precedence-list)
+       ,(create-constructor class-name class-slots)
        ,@(mapcar 'create-getter
-                 (make-list (length superclasses-slots) :initial-element class-name)
-                 superclasses-slots)
+                 (make-list (length class-slots) :initial-element class-name)
+                 class-slots)
        ,(create-recognizer class-name))))
