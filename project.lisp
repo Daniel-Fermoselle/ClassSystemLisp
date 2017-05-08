@@ -50,10 +50,10 @@
         t))))
 
 
-(defun get-superclasses-slots (classes slots)
-  (let* ((split-slots
+(defun get-class-slots (classes slots)
+  (let* ((superclasses-slots
            (mapcar #'(lambda (x) (gethash 'slot-names (gethash x class-system))) classes))
-         (appended-slots (apply #'append split-slots)))
+         (appended-slots (apply #'append superclasses-slots)))
     (remove-duplicates (append slots appended-slots) :from-end t )))
 
 (defun get-precedence-list (classes)
@@ -76,7 +76,7 @@
              (list class-name)))
        (class-slots
          (if subclass?
-             (get-superclasses-slots (rest classes-names) slots)
+             (get-class-slots (rest classes-names) slots)
              slots)))
     `(progn
        ,(format t "Is subclass?               -> ~a~%" subclass?)
