@@ -56,10 +56,10 @@
          (appended-slots (apply #'append split-slots)))
     (remove-duplicates (append slots appended-slots) :from-end t )))
 
-(defun get-superclasses-names (classes)
-  (let* ((split-names
+(defun get-precedence-list (classes)
+  (let* ((superclasses-names
            (mapcar #'(lambda (x) (gethash 'is-a (gethash x class-system))) (rest classes)))
-         (appended-names (apply #'append split-names)))
+         (appended-names (apply #'append superclasses-names)))
     (remove-duplicates (append (list (car classes)) appended-names) :from-end t )))
 
 
@@ -72,7 +72,7 @@
              classes-names))
        (precedence-list
          (if subclass?
-             (get-superclasses-names classes-names)
+             (get-precedence-list classes-names)
              (list class-name)))
        (class-slots
          (if subclass?
