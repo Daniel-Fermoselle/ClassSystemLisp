@@ -39,6 +39,7 @@
              (return-from ,getter ret)
              nil)))))
 
+
 (defun create-recognizer (class-name)
   (let ((recognizer
           (intern (concatenate 'STRING (symbol-name class-name) "?"))))
@@ -48,11 +49,19 @@
         nil
         t))))
 
+
 (defun get-superclasses-slots (classes slots)
   (let* ((split-slots
            (mapcar #'(lambda (x) (gethash 'slot-names (gethash x class-system))) classes))
          (appended-slots (apply #'append split-slots)))
     (remove-duplicates (append slots appended-slots) :from-end t )))
+
+(defun get-superclasses-names (classes)
+  (let* ((split-names
+           (mapcar #'(lambda (x) (gethash 'is-a (gethash x class-system))) (rest classes)))
+         (appended-names (apply #'append split-names)))
+    (remove-duplicates (append (list (car classes)) appended-names) :from-end t )))
+
 
 (defmacro def-class (classes-names &rest slots)
   (let*
@@ -63,7 +72,7 @@
              classes-names))
        (superclasses
          (if subclass?
-             classes-names
+             (get-superclasses-names classes-names)
              (list class-name)))
        (superclasses-slots
          (if subclass?
