@@ -41,6 +41,12 @@
              (return-from ,getter ret)
              nil)))))
 
+(defun create-setter (class-name slot)
+  (let* ((setter
+           (intern (concatenate 'STRING  "SET" "-" (symbol-name class-name) "-" (symbol-name slot)))))
+    `(defun ,setter (instance value)
+       (setf (gethash ',slot (gethash 'slots instance)) value))))
+
 
 (defun create-recognizer (class-name)
   (let ((recognizer
@@ -89,6 +95,9 @@
        ,(add-to-class-system class-name class-slots precedence-list)
        ,(create-constructor class-name class-slots)
        ,@(mapcar 'create-getter
+                 (make-list (length class-slots) :initial-element class-name)
+                 class-slots)
+       ,@(mapcar 'create-setter
                  (make-list (length class-slots) :initial-element class-name)
                  class-slots)
        ,(create-recognizer class-name))))
