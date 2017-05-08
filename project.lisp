@@ -8,10 +8,10 @@
     ht))
 
 
-(defun add-to-class-system (class-name slots superclasses)
+(defun add-to-class-system (class-name slots precedence-list)
   `(let ((class (make-hash-table)))
      (progn
-       (setf (gethash 'is-a class) ',superclasses)
+       (setf (gethash 'is-a class) ',precedence-list)
        (setf (gethash 'slot-names class) ',slots)
        (setf (gethash ',class-name class-system) class))))
 
@@ -34,7 +34,9 @@
   (let ((getter
           (intern (concatenate 'STRING  (symbol-name class-name) "-" (symbol-name slot)))))
     `(defun ,getter (instance)
-       (multiple-value-bind (ret exist?) (gethash ',slot (gethash 'slots instance))
+       (multiple-value-bind
+             (ret exist?)
+           (gethash ',slot (gethash 'slots instance))
          (if exist?
              (return-from ,getter ret)
              nil)))))
@@ -55,6 +57,7 @@
            (mapcar #'(lambda (x) (gethash 'slot-names (gethash x class-system))) classes))
          (appended-slots (apply #'append superclasses-slots)))
     (remove-duplicates (append slots appended-slots) :from-end t )))
+
 
 (defun get-precedence-list (classes)
   (let* ((superclasses-names
