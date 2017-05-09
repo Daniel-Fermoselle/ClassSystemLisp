@@ -16,10 +16,10 @@
        (setf (gethash ',class-name class-system) class))))
 
 
-(defun create-constructor (class-name slots)
+(defun create-constructor (class-name slots slots-names)
   (let ((constructor
           (intern (concatenate 'STRING  "MAKE" "-" (symbol-name class-name)))))
-    `(defun ,constructor (&key ,@slots)
+    `(defun ,constructor (&key ,@slots-names)
        (let* ((instance (make-hash-table))
               (slot-values (list ,@slots))
               (init-list  (mapcar #'(lambda (x y) `(,x ,y)) ',slots slot-values))
@@ -62,7 +62,13 @@
   (let* ((superclasses-slots
            (mapcar #'(lambda (x) (gethash 'slot-names (gethash x class-system))) classes))
          (appended-slots (apply #'append superclasses-slots)))
-    (remove-duplicates (append slots appended-slots) :from-end t )))
+    (remove-duplicates (append slots appended-slots)
+                       :test #'eql
+                       :key #'(lambda (x)
+                                (if (listp x)
+                                    (car x)
+                                    x))
+                       :from-end t)))
 
 
 (defun get-precedence-list (classes)
@@ -86,18 +92,23 @@
        (class-slots
          (if subclass?
              (get-class-slots (rest classes-names) slots)
-             slots)))
+             slots))
+       (class-slots-names
+         (mapcar #'(lambda (x)
+                     (if (listp x)
+                         (car x)
+                         x)) class-slots)))
     `(progn
        ,(format t "Is subclass?               -> ~a~%" subclass?)
        ,(format t "This class name            -> ~a~%" class-name)
        ,(format t "This class precedence-list -> ~a~%" precedence-list)
        ,(format t "This class slots           -> ~a~%" class-slots)
        ,(add-to-class-system class-name class-slots precedence-list)
-       ,(create-constructor class-name class-slots)
+       ,(create-constructor class-name class-slots-names class-slots)
        ,@(mapcar 'create-getter
-                 (make-list (length class-slots) :initial-element class-name)
-                 class-slots)
+                 (make-list (length class-slots-names) :initial-element class-name)
+                 class-slots-names)
        ,@(mapcar 'create-setter
-                 (make-list (length class-slots) :initial-element class-name)
-                 class-slots)
+                 (make-list (length class-slots-names) :initial-element class-name)
+                 class-slots-names)
        ,(create-recognizer class-name))))
