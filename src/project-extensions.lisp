@@ -8,18 +8,12 @@
     ht))
 
 ;;;;;
-(defun add-to-class-system (class-name slots precedence-list precedence-list2)
+(defun add-to-class-system (class-name slots precedence-list)
   `(let ((class (make-hash-table)))
-     (progn
-       (if
-        (eql (find ',class-name (rest ',precedence-list2)) nil)
-	(progn
 	  (setf (gethash 'is-a class) ',precedence-list)
 	  (setf (gethash 'slot-names class) ',slots)
 	  (setf (gethash ',class-name class-system) class)
-	  )
-	(error "~S cannot inherit from itself." ',class-name)
-	))))
+	  ))
 ;;;;;;
 
 
@@ -82,15 +76,11 @@
   (let* ((superclasses-names
 	  (mapcar #'(lambda (x) (gethash 'is-a (gethash x class-system))) (rest classes)))
          (appended-names (apply #'append superclasses-names)))
-    (remove-duplicates (append (list (car classes)) appended-names) :from-end t )))
+    (if
+        (eql (find (first classes) appended-names) nil)
+	(remove-duplicates (append (list (car classes)) appended-names) :from-end t )
+           (error "~S cannot inherit from itself." (first classes)))))
 
-;;;;;;
-(defun get-precedence-list2 (classes)
-  (let* ((superclasses-names
-	  (mapcar #'(lambda (x) (gethash 'is-a (gethash x class-system))) (rest classes)))
-         (appended-names (apply #'append superclasses-names)))
-    appended-names))
-;;;;;;
 
 (defmacro def-class (classes-names &rest slots)
   (let*
@@ -103,12 +93,6 @@
 	(if subclass?
 	    (get-precedence-list classes-names)
 	    (list class-name)))
-       ;;;;;;;;;;;;;;;;;;;;;
-       (precedence-list2
-	(if subclass?
-	    (get-precedence-list2 classes-names)
-	    (list class-name)))
-       ;;;;;;;;;;;;;;;;;;;;;
        (class-slots
 	(if subclass?
 	    (get-class-slots (rest classes-names) slots)
@@ -122,9 +106,8 @@
        ,(format t "Is subclass?               -> ~a~%" subclass?)
        ,(format t "This class name            -> ~a~%" class-name)
        ,(format t "This class precedence-list -> ~a~%" precedence-list)
-       ,(format t "This class precedence-list2 -> ~a~%" precedence-list2);;;;;;;;
        ,(format t "This class slots           -> ~a~%" class-slots)
-       ,(add-to-class-system class-name class-slots precedence-list precedence-list2);;;;
+       ,(add-to-class-system class-name class-slots precedence-list)
        ,(create-constructor class-name class-slots-names class-slots)
        ,@(mapcar 'create-getter
                  (make-list (length class-slots-names) :initial-element class-name)
